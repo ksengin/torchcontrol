@@ -184,3 +184,50 @@ class CartPole(ControlledSystemTemplate):
 
     def render(self):
         raise NotImplementedError("TODO: add the rendering from OpenAI Gym")
+
+
+class Dubins(ControlledSystemTemplate):
+    """
+    Dubins car
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.rad  = 0.5
+        self.v_max  = 1.
+
+    def dynamics(self, t, x):
+        self.nfe += 1 # increment number of function evaluations
+        u = self._evaluate_controller(t, x)
+
+        # Differential equations
+        dx = self.v_max * torch.cos(x[..., 2:])
+        dy = self.v_max * torch.sin(x[..., 2:])
+        dtheta = u * self.v_max / self.rad
+        # import pdb; pdb.set_trace()
+        # self.cur_f = torch.cat([dx, dy, dtheta], -1)
+        self.cur_f = torch.cat([dx, dy, dtheta * torch.ones_like(dx)], -1)
+        return self.cur_f
+
+
+class DubinsVaryv(ControlledSystemTemplate):
+    """
+    Dubins car
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.rad  = 0.5
+
+    def dynamics(self, t, x):
+        self.nfe += 1 # increment number of function evaluations
+        u = self._evaluate_controller(t, x)
+
+        # Differential equations
+        vs = (u[:, 1:] + 1) / 2
+
+        dx = vs * torch.cos(x[..., 2:])
+        dy = vs * torch.sin(x[..., 2:])
+        dtheta = u[:, :1] * vs / self.rad
+        # import pdb; pdb.set_trace()
+        # self.cur_f = torch.cat([dx, dy, dtheta], -1)
+        self.cur_f = torch.cat([dx, dy, dtheta * torch.ones_like(dx)], -1)
+        return self.cur_f
